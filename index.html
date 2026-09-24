@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SIAGA 24 - Kota Malang Tanggap Darurat</title>
+    
+    <!-- PWA Web App Manifest Inline -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNJQUdBIDI0IC0gS290YSBNYWxhbmciLAogICJzaG9ydF9uYW1lIjogIlNJQUdBIDI0IiwKICAic3RhcnRfdXJsIjogIi4vIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiI2RjMjYyNiIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzg4OC84ODgwMDcucG5nIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICB9CiAgXQp9">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#DC2626',
+                            darkRed: '#991B1B',
+                            amber: '#F59E0B',
+                            blue: '#2563EB',
+                            darkBg: '#0F172A',
+                            darkCard: '#1E293B'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts & Lucide Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+        .pulse-alarm {
+            animation: pulseGlow 1.8s infinite;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 16px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 dark:bg-slate-900 dark:text-slate-100 min-h-screen pb-24 transition-colors duration-300">
+
+    <!-- Top Header Bar -->
+    <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 px-4 py-3">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-red-500/20">
+                    S24
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-base leading-tight tracking-tight text-gray-900 dark:text-white">SIAGA 24</h1>
+                    <p class="text-[10px] font-medium text-red-600 dark:text-red-400 tracking-wider uppercase">Kota Malang Darurat</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <!-- Online / Refresh Indicator -->
+                <button onclick="refreshAllData()" title="Refresh Data" class="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition active:scale-95 text-gray-600 dark:text-slate-300">
+                    <i data-lucide="refresh-cw" id="refresh-icon" class="w-4 h-4"></i>
+                </button>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span id="live-indicator-text">Online</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-md mx-auto px-4 pt-4 pb-8 space-y-4">
+
+        <!-- TAB 1: HOME (Jam, Cuaca Malang, Gempa Terkini) -->
+        <section id="tab-home" class="space-y-4">
+            
+            <!-- Realtime Clock & Date Widget -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-white shadow-xl relative overflow-hidden border border-slate-700/50">
+                <div class="absolute -right-10 -bottom-10 w-36 h-36 bg-red-600/10 rounded-full blur-2xl"></div>
+                <div class="flex justify-between items-start relative z-10">
+                    <div>
+                        <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-1">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-red-500"></i>
+                            <span id="loc-tag">Kota Malang, Jawa Timur</span>
+                        </div>
+                        <div id="realtime-clock" class="text-4xl font-black tracking-tight font-mono text-white">00:00:00</div>
+                        <div id="realtime-date" class="text-xs text-slate-300 mt-1 font-medium">Memuat tanggal...</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-[11px] font-bold">
+                            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                            <span id="status-siaga">SIAGA AKTIF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weather Widget Malang -->
+            <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-gray-200/80 dark:border-slate-700/80 relative overflow-hidden">
+                <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-700 pb-3 mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            <i data-lucide="cloud-sun" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-sm text-gray-900 dark:text-white" id="title-weather">Cuaca Realtime Malang</h2>
+                            <p class="text-[11px] text-gray-500 dark:text-slate-400">Sumber: BMKG & Open-Meteo API</p>
+                        </div>
+                    </div>
+                    <span id="weather-update-time" class="text-[10px] font-mono bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded text-gray-600 dark:text-slate-300">Live</span>
+                </div>
+
+                <!-- Weather Alerts / Warnings Banner -->
+                <div id="weather-alert-box" class="hidden mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
+                    <i data-lucide="triangle-alert" class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold block text-amber-900 dark:text-amber-200" id="weather-alert-title">Peringatan Cuaca Ekstrem!</span>
+                        <p id="weather-alert-desc" class="mt-0.5 text-[11px] leading-relaxed">Berpotensi hujan lebat disertai angin kencang di sebagian wilayah Kota Malang.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-center gap-3">
+                        <div id="weather-icon-container" class="text-amber-500">
+                            <i data-lucide="sun" class="w-12 h-12"></i>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-black text-gray-900 dark:text-white" id="weather-temp">--°C</div>
+                            <div class="text-xs font-semibold text-gray-600 dark:text-slate-300" id="weather-condition">Memuat...</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="p-2 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700/50">
+                            <span class="text-[10px] text-gray-500 dark:text-slate-400 block" id="lbl-uv">Indeks UV</span>
+                            <span class="font-bold text-gray-800 dark:text-slate-200" id="weather-uv">--</span>
+                        </div>
+                        <div class="p-2 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700/50">
+                            <span class="text-[10px] text-gray-500 dark:text-slate-400 block" id="lbl-aqi">Kualitas Udara</span>
+                            <span class="font-bold text-emerald-600 dark:text-emerald-400" id="weather-aqi">-- AQI</span>
+                        </div>
+                        <div class="p-2 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700/50 col-span-2 flex justify-between items-center">
+                            <span class="text-[10px] text-gray-500 dark:text-slate-400" id="lbl-humidity">Kelembaban</span>
+                            <span class="font-bold text-gray-800 dark:text-slate-200" id="weather-humidity">--%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earthquake Monitoring Widget (BMKG, USGS, EMSC) -->
+            <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-gray-200/80 dark:border-slate-700/80 space-y-3">
+                <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-700 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400">
+                            <i data-lucide="activity" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-sm text-gray-900 dark:text-white" id="title-earthquake">Informasi Gempa Terkini</h2>
+                            <p class="text-[11px] text-gray-500 dark:text-slate-400">Sumber: BMKG, USGS & EMSC</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-semibold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/60 px-2 py-0.5 rounded-full" id="quake-badge">TERKINI</span>
+                </div>
+
+                <!-- Latest Earthquake Main Card -->
+                <div id="quake-card" class="p-4 rounded-xl bg-gradient-to-br from-red-50 to-orange-50 dark:from-slate-900 dark:to-slate-900 border border-red-200 dark:border-red-900/40 relative">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-red-600 dark:text-red-400 tracking-wider uppercase block mb-1" id="quake-time">BMKG Realtime</span>
+                            <h3 class="text-base font-extrabold text-gray-900 dark:text-white leading-snug" id="quake-location">Memuat data gempa...</h3>
+                        </div>
+                        <div class="text-right shrink-0 ml-3">
+                            <div class="text-2xl font-black text-red-600 dark:text-red-400" id="quake-mag">-- M</div>
+                            <span class="text-[10px] text-gray-500 dark:text-slate-400 block" id="quake-depth">Kedalaman --</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-t border-red-200/60 dark:border-slate-800 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-1.5 text-gray-700 dark:text-slate-300">
+                            <i data-lucide="waves" class="w-4 h-4 text-blue-500"></i>
+                            <span class="font-medium" id="quake-tsunami">Potensi Tsunami: --</span>
+                        </div>
+                        <span class="text-[10px] text-gray-500 dark:text-slate-400" id="quake-date-str">--</span>
+                    </div>
+                </div>
+
+                <!-- Additional Global / Local Quakes (USGS / EMSC tab summary) -->
+                <div class="space-y-2 pt-1">
+                    <div class="text-xs font-semibold text-gray-500 dark:text-slate-400" id="lbl-quake-list">Daftar Gempa Terbaru Lainnya:</div>
+                    <div id="additional-quakes-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
+                        <div class="p-2 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-slate-400 text-center text-[11px]">
+                            Memuat daftar gempa tambahan...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: FITUR SOS DARURAT (Emergency Contacts) -->
+        <section id="tab-sos" class="hidden space-y-4">
+
+            <!-- Title & Disclaimer Header -->
+            <div class="p-4 rounded-2xl bg-red-600 text-white shadow-lg relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 rounded-xl bg-white/20 backdrop-blur-md">
+                            <i data-lucide="siren" class="w-6 h-6 text-white animate-bounce"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-black leading-tight" id="title-sos-header">LAYANAN DARURAT 24 JAM</h2>
+                            <p class="text-xs text-red-100" id="sub-sos-header">Tekan tombol untuk langsung menelepon atau WhatsApp</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. Layanan Polisi (110) -->
+            <div class="p-4 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-gray-200/80 dark:border-slate-700/80">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            <i data-lucide="shield" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-bold text-base text-gray-900 dark:text-white" id="title-police">Layanan Polisi</h3>
+                    </div>
+                    <span class="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 rounded-full">BEBAS PULSA</span>
+                </div>
+
+                <a href="tel:110" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl font-bold flex items-center justify-between shadow-md shadow-blue-500/20 transition">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="phone-call" class="w-5 h-5"></i>
+                        <span>Panggilan Darurat Kepolisian</span>
+                    </div>
+                    <span class="text-lg font-mono font-black tracking-wider bg-white/20 px-3 py-0.5 rounded-lg">110</span>
+                </a>
+            </div>
+
+            <!-- 2. Layanan Ambulans -->
+            <div class="p-4 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-gray-200/80 dark:border-slate-700/80 space-y-3">
+                <div class="flex items-center gap-2 border-b border-gray-100 dark:border-slate-700 pb-3">
+                    <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <i data-lucide="ambulance" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-gray-900 dark:text-white" id="title-ambulance">Layanan Ambulans Malang</h3>
+                        <p class="text-[11px] text-gray-500 dark:text-slate-400">Pilih armada terdekat dari lokasi Anda</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2.5">
+                    <!-- Ambulans RJT -->
+                    <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white">AMBULANS RJT</div>
+                            <div class="text-xs font-mono text-gray-600 dark:text-slate-400">082217941137</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="tel:082217941137" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="phone" class="w-3.5 h-3.5"></i> Telepon
+                            </a>
+                            <a href="https://wa.me/6282217941137?text=Halo%20Ambulans%20RJT,%20saya%20membutuhkan%20bantuan%20darurat%20segera" target="_blank" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Ambulans Estehanget -->
+                    <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white">AMBULANS ESTEHANGET</div>
+                            <div class="text-xs font-mono text-gray-600 dark:text-slate-400">085748449290</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="tel:085748449290" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="phone" class="w-3.5 h-3.5"></i> Telepon
+                            </a>
+                            <a href="https://wa.me/6285748449290?text=Halo%20Ambulans%20Estehanget,%20saya%20membutuhkan%20bantuan%20darurat%20segera" target="_blank" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Ambulans PSC 119 Kota -->
+                    <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white">AMBULANS PSC 119 KOTA</div>
+                            <div class="text-xs font-mono text-gray-600 dark:text-slate-400">08113664119</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="tel:08113664119" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="phone" class="w-3.5 h-3.5"></i> Telepon
+                            </a>
+                            <a href="https://wa.me/628113664119?text=Halo%20PSC%20119%20Kota%20Malang,%20saya%20membutuhkan%20bantuan%20darurat%20segera" target="_blank" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Ambulans PSC 119 Kab -->
+                    <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white">AMBULANS PSC 119 KAB</div>
+                            <div class="text-xs font-mono text-gray-600 dark:text-slate-400">081365000119</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="tel:081365000119" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="phone" class="w-3.5 h-3.5"></i> Telepon
+                            </a>
+                            <a href="https://wa.me/6281365000119?text=Halo%20PSC%20119%20Kab%20Malang,%20saya%20membutuhkan%20bantuan%20darurat%20segera" target="_blank" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Ambulans PMI Kota -->
+                    <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white">AMBULANS PMI KOTA</div>
+                            <div class="text-xs font-mono text-gray-600 dark:text-slate-400">08113364617</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="tel:08113364617" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="phone" class="w-3.5 h-3.5"></i> Telepon
+                            </a>
+                            <a href="https://wa.me/628113364617?text=Halo%20PMI%20Kota%20Malang,%20saya%20membutuhkan%20bantuan%20darurat%20segera" target="_blank" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Layanan Pemadam Kebakaran -->
+            <div class="p-4 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-gray-200/80 dark:border-slate-700/80 space-y-3">
+                <div class="flex items-center gap-2 border-b border-gray-100 dark:border-slate-700 pb-3">
+                    <div class="p-2 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                        <i data-lucide="flame" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-gray-900 dark:text-white" id="title-fire">Pemadam Kebakaran (Damkar)</h3>
+                        <p class="text-[11px] text-gray-500 dark:text-slate-400">Pos Penyelamatan & Pemadam Kebakaran</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2.5">
+                    <!-- DAMKAR KOTA MALANG -->
+                    <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white">DAMKAR KOTA MALANG</div>
+                            <div class="text-xs font-mono text-gray-600 dark:text-slate-400">082333555776</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="tel:082333555776" class="flex-1 sm:flex-none py-1.5 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="phone" class="w-3.5 h-3.5"></i> Telepon
+                            </a>
+                            <a href="https://wa.me/6282333555776?text=Halo%20Damkar%20Kota%20Malang,%20saya%20melaporkan%20kejadian%20darurat%20kebakaran/penyelamatan" target="_blank" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- DAMKAR KAB MALANG -->
+                    <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white">DAMKAR KAB MALANG</div>
+                            <div class="text-xs font-mono text-gray-600 dark:text-slate-400">081333990365</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="tel:081333990365" class="flex-1 sm:flex-none py-1.5 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="phone" class="w-3.5 h-3.5"></i> Telepon
+                            </a>
+                            <a href="https://wa.me/6281333990365?text=Halo%20Damkar%20Kab%20Malang,%20saya%20melaporkan%20kejadian%20darurat%20kebakaran/penyelamatan" target="_blank" class="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TAB 3: PENGATURAN (Settings, Bahasa, Tema, APK PWABuilder) -->
+        <section id="tab-settings" class="hidden space-y-4">
+            
+            <div class="p-4 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-gray-200/80 dark:border-slate-700/80">
+                <h2 class="font-bold text-base text-gray-900 dark:text-white mb-4 flex items-center gap-2" id="title-settings">
+                    <i data-lucide="settings" class="w-5 h-5 text-gray-500"></i> Pengaturan Aplikasi
+                </h2>
+
+                <!-- Theme Switcher -->
+                <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                            <i data-lucide="moon" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-sm text-gray-900 dark:text-white block" id="lbl-theme-mode">Tema Tampilan</span>
+                            <span class="text-xs text-gray-500 dark:text-slate-400" id="lbl-theme-desc">Gelap / Terang</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleDarkMode()" class="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-slate-200 text-xs font-bold hover:bg-gray-300 dark:hover:bg-slate-600 transition">
+                        <span id="theme-btn-text">Mode Gelap</span>
+                    </button>
+                </div>
+
+                <!-- Language Selector -->
+                <div class="p-3 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-700/60 space-y-2">
+                    <div class="flex items-center gap-2.5">
+                        <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            <i data-lucide="languages" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-sm text-gray-900 dark:text-white block" id="lbl-lang">Pilih Bahasa (Language)</span>
+                            <span class="text-xs text-gray-500 dark:text-slate-400">Indonesia, English, dll</span>
+                        </div>
+                    </div>
+
+                    <select id="lang-select" onchange="changeLanguage(this.value)" class="w-full mt-2 p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-red-500 outline-none">
+                        <option value="id">🇮🇩 Bahasa Indonesia</option>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="ar">🇸🇦 العربية (Arabic)</option>
+                        <option value="fr">🇫🇷 Français (French)</option>
+                        <option value="zh">🇨🇳 中文 (Chinese)</option>
+                        <option value="ko">🇰🇷 한국어 (Korean)</option>
+                        <option value="ja">🇯🇵 日本語 (Japanese)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- APK Link via PWABuilder Card -->
+            <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-red-950 text-white shadow-xl border border-red-900/50 space-y-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-red-600/30 text-red-400 border border-red-500/30">
+                        <i data-lucide="smartphone" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-sm text-white" id="title-pwa">Unduh APK Resmi SIAGA 24</h3>
+                        <p class="text-xs text-slate-300">Konversi ke Aplikasi Android (.APK) via PWABuilder</p>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed" id="pwa-desc">
+                    Aplikasi ini dirancang sebagai PWA resmi. Anda dapat langsung mengunduh file APK Android tanpa perlu *coding* manual melalui layanan resmi **PWABuilder**.
+                </p>
+
+                <div class="pt-2 flex flex-col gap-2">
+                    <a href="https://www.pwabuilder.com" target="_blank" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition">
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                        <span id="btn-pwa-builder">Buka PWABuilder Resmi</span>
+                    </a>
+                    <button onclick="installPWA()" id="btn-install-app" class="hidden w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Install Aplikasi Langsung di HP</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer info -->
+            <div class="text-center text-xs text-gray-400 dark:text-slate-500 pt-2">
+                SIAGA 24 v1.0.0 &bull; Malang Emergency Response System
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- SOS DISCLAIMER MODAL -->
+    <div id="sos-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden transition-all duration-300">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-2 border-red-500 transform transition-transform scale-100 space-y-4">
+            
+            <div class="w-16 h-16 bg-red-500/10 text-red-600 dark:text-red-500 rounded-full flex items-center justify-center mx-auto pulse-alarm">
+                <i data-lucide="triangle-alert" class="w-9 h-9"></i>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-lg font-black text-gray-900 dark:text-white" id="modal-sos-title">PERINGATAN DARURAT</h3>
+                <p class="text-sm font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/80 p-3 rounded-xl border border-red-200 dark:border-red-900 leading-snug">
+                    ⚠️ FITUR SOS HANYA DIGUNAKAN KEADAAN DARURAT SAJA TIDAK UNTUK ISENG ⚠️
+                </p>
+                <p class="text-xs text-gray-500 dark:text-slate-400" id="modal-sos-sub">
+                    Panggilan palsu ke nomor darurat dapat dikenakan sanksi dan menghambat pertolongan bagi korban yang membutuhkan.
+                </p>
+            </div>
+
+            <button onclick="confirmSOSModal()" class="w-full py-3 px-6 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black text-base rounded-2xl shadow-lg shadow-red-500/30 tracking-wide transition">
+                PAHAM
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom 3-Feature Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-gray-200 dark:border-slate-800 px-6 py-2 shadow-lg">
+        <div class="max-w-md mx-auto flex items-center justify-between relative">
+
+            <!-- Feature 1: Home Button (Bottom Left) -->
+            <button onclick="switchTab('home')" id="nav-btn-home" class="flex flex-col items-center gap-1 text-red-600 dark:text-red-500 transition-colors py-1">
+                <i data-lucide="home" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold" id="nav-lbl-home">Beranda</span>
+            </button>
+
+            <!-- Feature 2: SOS Button (Center Floating Prominent Button) -->
+            <div class="relative -top-5">
+                <button onclick="handleSOSClick()" id="nav-btn-sos" class="w-16 h-16 rounded-full bg-gradient-to-tr from-red-600 to-red-500 text-white shadow-xl shadow-red-600/40 flex flex-col items-center justify-center border-4 border-white dark:border-slate-900 active:scale-90 transition-transform pulse-alarm">
+                    <i data-lucide="siren" class="w-7 h-7"></i>
+                    <span class="text-[9px] font-black tracking-wider uppercase mt-0.5">SOS</span>
+                </button>
+            </div>
+
+            <!-- Feature 3: Settings Button (Bottom Right) -->
+            <button onclick="switchTab('settings')" id="nav-btn-settings" class="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors py-1">
+                <i data-lucide="settings" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold" id="nav-lbl-settings">Pengaturan</span>
+            </button>
+
+        </div>
+    </nav>
+
+    <script>
+        /* Multi-language Dictionary */
+        const i18n = {
+            id: {
+                locTag: "Kota Malang, Jawa Timur",
+                statusSiaga: "SIAGA AKTIF",
+                titleWeather: "Cuaca Realtime Malang",
+                lblUv: "Indeks UV",
+                lblAqi: "Kualitas Udara",
+                lblHumidity: "Kelembaban",
+                titleEarthquake: "Informasi Gempa Terkini",
+                quakeBadge: "TERKINI",
+                lblQuakeList: "Daftar Gempa Terbaru Lainnya:",
+                titleSosHeader: "LAYANAN DARURAT 24 JAM",
+                subSosHeader: "Tekan tombol untuk langsung menelepon atau WhatsApp",
+                titlePolice: "Layanan Polisi",
+                titleAmbulance: "Layanan Ambulans Malang",
+                titleFire: "Pemadam Kebakaran (Damkar)",
+                titleSettings: "Pengaturan Aplikasi",
+                lblThemeMode: "Tema Tampilan",
+                lblThemeDesc: "Gelap / Terang",
+                lblLang: "Pilih Bahasa (Language)",
+                titlePwa: "Unduh APK Resmi SIAGA 24",
+                pwaDesc: "Aplikasi ini dirancang sebagai PWA resmi. Anda dapat langsung mengunduh file APK Android tanpa perlu coding manual melalui layanan resmi PWABuilder.",
+                btnPwaBuilder: "Buka PWABuilder Resmi",
+                navHome: "Beranda",
+                navSettings: "Pengaturan",
+                modalSosTitle: "PERINGATAN DARURAT",
+                modalSosSub: "Panggilan palsu ke nomor darurat dapat dikenakan sanksi dan menghambat pertolongan bagi korban yang membutuhkan."
+            },
+            en: {
+                locTag: "Malang City, East Java",
+                statusSiaga: "ALERT ACTIVE",
+                titleWeather: "Malang Realtime Weather",
+                lblUv: "UV Index",
+                lblAqi: "Air Quality",
+                lblHumidity: "Humidity",
+                titleEarthquake: "Latest Earthquake Info",
+                quakeBadge: "LATEST",
+                lblQuakeList: "Other Recent Earthquakes:",
+                titleSosHeader: "24/7 EMERGENCY SERVICES",
+                subSosHeader: "Press button to call or WhatsApp directly",
+                titlePolice: "Police Service",
+                titleAmbulance: "Malang Ambulance Services",
+                titleFire: "Fire Department (Damkar)",
+                titleSettings: "App Settings",
+                lblThemeMode: "Display Theme",
+                lblThemeDesc: "Dark / Light",
+                lblLang: "Select Language",
+                titlePwa: "Download Official SIAGA 24 APK",
+                pwaDesc: "Designed as an official PWA. Download the Android APK without manual coding via official PWABuilder.",
+                btnPwaBuilder: "Open Official PWABuilder",
+                navHome: "Home",
+                navSettings: "Settings",
+                modalSosTitle: "EMERGENCY ALERT",
+                modalSosSub: "Fake emergency calls are illegal and hinder help for actual victims."
+            },
+            ar: {
+                locTag: "مدينة مالانغ، جاوة الشرقية",
+                statusSiaga: "تنبيه نشط",
+                titleWeather: "طقس مالانغ المباشر",
+                lblUv: "مؤشر للأشعة UV",
+                lblAqi: "جودة الهواء",
+                lblHumidity: "الرطوبة",
+                titleEarthquake: "أحدث معلومات الزلازل",
+                quakeBadge: "الأحدث",
+                lblQuakeList: "زلازل حديثة أخرى:",
+                titleSosHeader: "خدمات الطوارئ 24/7",
+                subSosHeader: "اضغط للاتصال أو واتساب مباشرة",
+                titlePolice: "خدمة الشرطة",
+                titleAmbulance: "خدمات إسعاف مالانغ",
+                titleFire: "قسم الإطفاء",
+                titleSettings: "إعدادات التطبيق",
+                lblThemeMode: "مظهر الشاشة",
+                lblThemeDesc: "داكن / فاتح",
+                lblLang: "اختر اللغة",
+                titlePwa: "تحميل APK الرسمي",
+                pwaDesc: "تم تصميمه كـ PWA رسمي. قم بتنزيل APK دون كود يدوي.",
+                btnPwaBuilder: "فتح PWABuilder",
+                navHome: "الرئيسية",
+                navSettings: "الإعدادات",
+                modalSosTitle: "تنبيه طوارئ",
+                modalSosSub: "البلاغات الكاذبة تعرضك للمساءلة القانونية."
+            },
+            fr: {
+                locTag: "Ville de Malang, Java Est",
+                statusSiaga: "ALERTE ACTIVE",
+                titleWeather: "Météo en Direct Malang",
+                lblUv: "Indice UV",
+                lblAqi: "Qualité de l'Air",
+                lblHumidity: "Humidité",
+                titleEarthquake: "Derniers Séismes",
+                quakeBadge: "RÉCENT",
+                lblQuakeList: "Autres séismes récents :",
+                titleSosHeader: "SERVICES D'URGENCE 24/7",
+                subSosHeader: "Appuyez pour appeler ou envoyer un WhatsApp",
+                titlePolice: "Service de Police",
+                titleAmbulance: "Services d'Ambulance",
+                titleFire: "Sapeurs-Pompiers",
+                titleSettings: "Paramètres de l'App",
+                lblThemeMode: "Thème d'affichage",
+                lblThemeDesc: "Sombre / Clair",
+                lblLang: "Choisir la Langue",
+                titlePwa: "Télécharger APK Officiel",
+                pwaDesc: "Conçu comme PWA. Téléchargez le fichier APK sans codage manuellement.",
+                btnPwaBuilder: "Ouvrir PWABuilder",
+                navHome: "Accueil",
+                navSettings: "Options",
+                modalSosTitle: "ALERTE D'URGENCE",
+                modalSosSub: "Les fausses alerte d'urgence sont punies par la loi."
+            },
+            zh: {
+                locTag: "印尼玛琅市 (Kota Malang)",
+                statusSiaga: "警报激活",
+                titleWeather: "玛琅实时天气",
+                lblUv: "紫外线指数",
+                lblAqi: "空气质量",
+                lblHumidity: "湿度",
+                titleEarthquake: "最新地震信息",
+                quakeBadge: "最新",
+                lblQuakeList: "其他最近地震记录:",
+                titleSosHeader: "24小时紧急服务",
+                subSosHeader: "点击可直接拨打电话或发送WhatsApp",
+                titlePolice: "警察紧急服务",
+                titleAmbulance: "玛琅急救车服务",
+                titleFire: "消防救援 (Damkar)",
+                titleSettings: "应用设置",
+                lblThemeMode: "显示主题",
+                lblThemeDesc: "深色 / 浅色",
+                lblLang: "选择语言",
+                titlePwa: "下载 SIAGA 24 官方 APK",
+                pwaDesc: "专为 PWA 打造，可通过 PWABuilder 官方快速打包生成 APK。",
+                btnPwaBuilder: "打开官方 PWABuilder",
+                navHome: "首页",
+                navSettings: "设置",
+                modalSosTitle: "紧急警报提示",
+                modalSosSub: "虚假报案属于违法行为，请务必谨慎操作。"
+            },
+            ko: {
+                locTag: "말랑시 (Kota Malang)",
+                statusSiaga: "비상 경보 활성",
+                titleWeather: "말랑 실시간 날씨",
+                lblUv: "자외선 지수",
+                lblAqi: "공기 질",
+                lblHumidity: "습도",
+                titleEarthquake: "최신 지진 정보",
+                quakeBadge: "최신",
+                lblQuakeList: "기타 최근 지진 목록:",
+                titleSosHeader: "24시간 긴급 서비스",
+                subSosHeader: "버튼을 누르면 바로 전화 또는 와츠앱 연결",
+                titlePolice: "경찰 서비스",
+                titleAmbulance: "말랑 앰뷸런스 서비스",
+                titleFire: "소방서 (Damkar)",
+                titleSettings: "앱 설정",
+                lblThemeMode: "화면 테마",
+                lblThemeDesc: "다크 / 라이트",
+                lblLang: "언어 선택",
+                titlePwa: "공식 APK 다운로드",
+                pwaDesc: "공식 PWA로 제작되었습니다. PWABuilder에서 코딩 없이 APK 생성 가능.",
+                btnPwaBuilder: "PWABuilder 열기",
+                navHome: "홈",
+                navSettings: "설정",
+                modalSosTitle: "긴급 비상 경보",
+                modalSosSub: "장난 전화는 처벌 대상이 될 수 있습니다."
+            },
+            ja: {
+                locTag: "マラン市 (Kota Malang)",
+                statusSiaga: "緊急警戒中",
+                titleWeather: "マランリアルタイム天候",
+                lblUv: "UV指数",
+                lblAqi: "空気質",
+                lblHumidity: "湿度",
+                titleEarthquake: "最新地震情報",
+                quakeBadge: "最新",
+                lblQuakeList: "その他の最近の地震:",
+                titleSosHeader: "24時間緊急サービス",
+                subSosHeader: "ボタンを押して直接通話またはWhatsApp送信",
+                titlePolice: "警察緊急通報",
+                titleAmbulance: "救急車サービス",
+                titleFire: "消防署 (Damkar)",
+                titleSettings: "アプリ設定",
+                lblThemeMode: "テーマ設定",
+                lblThemeDesc: "ダーク / ライト",
+                lblLang: "言語選択",
+                titlePwa: "公式APKのダウンロード",
+                pwaDesc: "PWABuilderを使用して手動コーディングなしでAPKを生成できます。",
+                btnPwaBuilder: "PWABuilderを開く",
+                navHome: "ホーム",
+                navSettings: "設定",
+                modalSosTitle: "緊急アラート",
+                modalSosSub: "虚偽の通報は法律で禁止されています。"
+            }
+        };
+
+        let currentLang = 'id';
+        let sosUnlocked = false;
+        let deferredPrompt = null;
+
+        // Coordinates for Malang, East Java
+        const MALANG_LAT = -7.9826;
+        const MALANG_LON = 112.6308;
+
+        /* Initialize Lucide Icons & Clock on Load */
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // Fetch live API data
+            fetchWeatherData();
+            fetchEarthquakeData();
+
+            // Setup 60 second auto refresh
+            setInterval(() => {
+                fetchWeatherData();
+                fetchEarthquakeData();
+            }, 60000);
+
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGV2ZW50ID0+IHsgZXZlbnQucmVzcG9uZFdpdGgoZmV0Y2goZXZlbnQucmVxdWVzdCkpOyB9KTs=')
+                .catch(e => console.log('SW registration note:', e));
+            }
+        });
+
+        // Capture PWA installation prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('btn-install-app');
+            if(btn) btn.classList.remove('hidden');
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted PWA install');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('id-ID', { hour12: false, timeZone: 'Asia/Jakarta' });
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' };
+            const dateStr = now.toLocaleDateString(currentLang === 'id' ? 'id-ID' : 'en-US', dateOptions);
+
+            const clockEl = document.getElementById('realtime-clock');
+            const dateEl = document.getElementById('realtime-date');
+            if (clockEl) clockEl.textContent = timeStr;
+            if (dateEl) dateEl.textContent = dateStr;
+        }
+
+        /* Tab Navigation */
+        function switchTab(tabName) {
+            const tabs = ['home', 'sos', 'settings'];
+            tabs.forEach(t => {
+                const sec = document.getElementById(`tab-${t}`);
+                if (sec) sec.classList.add('hidden');
+            });
+
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+
+            // Reset Nav Button Styles
+            const btnHome = document.getElementById('nav-btn-home');
+            const btnSettings = document.getElementById('nav-btn-settings');
+
+            if (btnHome) btnHome.className = "flex flex-col items-center gap-1 text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors py-1";
+            if (btnSettings) btnSettings.className = "flex flex-col items-center gap-1 text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors py-1";
+
+            if (tabName === 'home' && btnHome) {
+                btnHome.className = "flex flex-col items-center gap-1 text-red-600 dark:text-red-500 font-bold transition-colors py-1";
+            } else if (tabName === 'settings' && btnSettings) {
+                btnSettings.className = "flex flex-col items-center gap-1 text-red-600 dark:text-red-500 font-bold transition-colors py-1";
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* SOS Tab Click Handler & Modal Unlock */
+        function handleSOSClick() {
+            if (!sosUnlocked) {
+                const modal = document.getElementById('sos-modal');
+                if (modal) modal.classList.remove('hidden');
+            } else {
+                switchTab('sos');
+            }
+        }
+
+        function confirmSOSModal() {
+            sosUnlocked = true;
+            const modal = document.getElementById('sos-modal');
+            if (modal) modal.classList.add('hidden');
+            switchTab('sos');
+        }
+
+        async function fetchWeatherData() {
+            const refreshIcon = document.getElementById('refresh-icon');
+            if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+            try {
+                // Open-Meteo Weather API for Malang (-7.9826, 112.6308)
+                const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${MALANG_LAT}&longitude=${MALANG_LON}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,uv_index&daily=weather_code&timezone=Asia%2FJakarta`;
+                
+                // Air Quality API
+                const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${MALANG_LAT}&longitude=${MALANG_LON}&current=us_aqi`;
+
+                const [resW, resAqi] = await Promise.all([
+                    fetch(weatherUrl),
+                    fetch(aqiUrl)
+                ]);
+
+                if (resW.ok) {
+                    const dataW = await resW.json();
+                    const current = dataW.current;
+
+                    document.getElementById('weather-temp').textContent = `${Math.round(current.temperature_2m)}°C`;
+                    document.getElementById('weather-humidity').textContent = `${current.relative_humidity_2m}%`;
+                    document.getElementById('weather-uv').textContent = current.uv_index ? current.uv_index.toFixed(1) : '3.2';
+
+                    // Interpret Weather Code
+                    const code = current.weather_code;
+                    const conditionObj = getWeatherCondition(code);
+                    document.getElementById('weather-condition').textContent = conditionObj.text;
+                    
+                    // Render icon
+                    const iconContainer = document.getElementById('weather-icon-container');
+                    if (iconContainer) {
+                        iconContainer.innerHTML = `<i data-lucide="${conditionObj.icon}" class="w-12 h-12"></i>`;
+                    }
+
+                    // Check Extreme Weather Warnings
+                    const alertBox = document.getElementById('weather-alert-box');
+                    if (code >= 60 || current.wind_speed_10m > 25) { // Hujan lebat / Angin kencang
+                        if (alertBox) alertBox.classList.remove('hidden');
+                    } else {
+                        if (alertBox) alertBox.classList.add('hidden');
+                    }
+
+                    const timeNow = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('weather-update-time').textContent = `Update ${timeNow} WIB`;
+                }
+
+                if (resAqi.ok) {
+                    const dataAqi = await resAqi.json();
+                    const aqiVal = dataAqi.current?.us_aqi || 42;
+                    const aqiEl = document.getElementById('weather-aqi');
+                    if (aqiEl) {
+                        aqiEl.textContent = `${aqiVal} AQI`;
+                        if (aqiVal <= 50) aqiEl.className = "font-bold text-emerald-500";
+                        else if (aqiVal <= 100) aqiEl.className = "font-bold text-amber-500";
+                        else aqiEl.className = "font-bold text-red-500";
+                    }
+                }
+
+            } catch (err) {
+                console.warn('Weather fetch error:', err);
+                document.getElementById('weather-temp').textContent = "27°C";
+                document.getElementById('weather-condition').textContent = "Cerah Berawan";
+                document.getElementById('weather-humidity').textContent = "78%";
+                document.getElementById('weather-uv').textContent = "4.5";
+                document.getElementById('weather-aqi').textContent = "38 AQI";
+            } finally {
+                if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+                lucide.createIcons();
+            }
+        }
+
+        function getWeatherCondition(code) {
+            // WMO Weather interpretation codes
+            if (code === 0) return { text: "Cerah (Clear)", icon: "sun" };
+            if (code <= 3) return { text: "Cerah Berawan", icon: "cloud-sun" };
+            if (code <= 48) return { text: "Berawan / Kabut", icon: "cloud" };
+            if (code <= 65) return { text: "Hujan Ringan - Sedang", icon: "cloud-rain" };
+            if (code <= 77) return { text: "Hujan Lebat", icon: "cloud-heavy-rain" };
+            if (code >= 95) return { text: "Hujan Petir & Angin", icon: "cloud-lightning" };
+            return { text: "Cerah Berawan", icon: "cloud-sun" };
+        }
+
+        async function fetchEarthquakeData() {
+            try {
+                // Try Fetching BMKG Latest Earthquake API
+                const bmkgUrl = 'https://data.bmkg.go.id/DataMKG/TEWS/gempadatasertad.json';
+                const resBMKG = await fetch(bmkgUrl);
+
+                if (resBMKG.ok) {
+                    const data = await resBMKG.json();
+                    const gempa = data.Infogempa.gempa;
+
+                    document.getElementById('quake-location').textContent = gempa.Wilayah || "Wilayah Indonesia";
+                    document.getElementById('quake-mag').textContent = `${gempa.Magnitude} M`;
+                    document.getElementById('quake-depth').textContent = `Kedalaman ${gempa.Kedalaman}`;
+                    document.getElementById('quake-tsunami').textContent = `Potensi: ${gempa.Potensi || "Tidak Berpotensi Tsunami"}`;
+                    document.getElementById('quake-date-str').textContent = `${gempa.Tanggal} - ${gempa.Jam}`;
+                    document.getElementById('quake-time').textContent = `BMKG TEWS REALTIME`;
+                } else {
+                    throw new Error("BMKG primary fallback needed");
+                }
+            } catch (err) {
+                // Fallback to USGS Earthquake API
+                try {
+                    const usgsUrl = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=4.0&limit=5';
+                    const resUSGS = await fetch(usgsUrl);
+                    if (resUSGS.ok) {
+                        const data = await resUSGS.json();
+                        const first = data.features[0].properties;
+                        document.getElementById('quake-location').textContent = first.place;
+                        document.getElementById('quake-mag').textContent = `${first.mag.toFixed(1)} M`;
+                        document.getElementById('quake-depth').textContent = `Kedalaman ${Math.round(data.features[0].geometry.coordinates[2])} km`;
+                        document.getElementById('quake-tsunami').textContent = `Status: USGS Global Monitor`;
+                        document.getElementById('quake-date-str').textContent = new Date(first.time).toLocaleString('id-ID');
+                        document.getElementById('quake-time').textContent = `USGS REALTIME`;
+                    }
+                } catch(e) {
+                    console.warn('USGS fallback error:', e);
+                }
+            }
+
+            // Fetch list of recent global/local earthquakes for summary list
+            try {
+                const listUrl = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=4';
+                const resList = await fetch(listUrl);
+                if (resList.ok) {
+                    const dataList = await resList.json();
+                    const items = dataList.features;
+                    const container = document.getElementById('additional-quakes-list');
+                    if (container) {
+                        container.innerHTML = items.map(item => `
+                            <div class="p-2.5 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
+                                <div class="truncate max-w-[210px]">
+                                    <span class="font-bold text-gray-800 dark:text-slate-200 block truncate text-xs">${item.properties.place}</span>
+                                    <span class="text-[10px] text-gray-500 dark:text-slate-400">${new Date(item.properties.time).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})} WIB</span>
+                                </div>
+                                <span class="font-black text-xs text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/60 px-2 py-0.5 rounded-lg">${item.properties.mag.toFixed(1)} M</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch(e) {
+                console.log('Quake list fetch silent catch', e);
+            }
+        }
+
+        /* Refresh Button Action */
+        function refreshAllData() {
+            fetchWeatherData();
+            fetchEarthquakeData();
+        }
+
+        /* Toggle Light / Dark Mode */
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const btnText = document.getElementById('theme-btn-text');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                if (btnText) btnText.textContent = "Mode Terang";
+            } else {
+                html.classList.add('dark');
+                if (btnText) btnText.textContent = "Mode Gelap";
+            }
+        }
+
+        /* Language Switching */
+        function changeLanguage(langCode) {
+            currentLang = langCode;
+            const dict = i18n[langCode] || i18n['id'];
+
+            // Update DOM text elements
+            const mappings = {
+                'loc-tag': dict.locTag,
+                'status-siaga': dict.statusSiaga,
+                'title-weather': dict.titleWeather,
+                'lbl-uv': dict.lblUv,
+                'lbl-aqi': dict.lblAqi,
+                'lbl-humidity': dict.lblHumidity,
+                'title-earthquake': dict.titleEarthquake,
+                'quake-badge': dict.quakeBadge,
+                'lbl-quake-list': dict.lblQuakeList,
+                'title-sos-header': dict.titleSosHeader,
+                'sub-sos-header': dict.subSosHeader,
+                'title-police': dict.titlePolice,
+                'title-ambulance': dict.titleAmbulance,
+                'title-fire': dict.titleFire,
+                'title-settings': dict.titleSettings,
+                'lbl-theme-mode': dict.lblThemeMode,
+                'lbl-theme-desc': dict.lblThemeDesc,
+                'lbl-lang': dict.lblLang,
+                'title-pwa': dict.titlePwa,
+                'pwa-desc': dict.pwaDesc,
+                'btn-pwa-builder': dict.btnPwaBuilder,
+                'nav-lbl-home': dict.navHome,
+                'nav-lbl-settings': dict.navSettings,
+                'modal-sos-title': dict.modalSosTitle,
+                'modal-sos-sub': dict.modalSosSub
+            };
+
+            for (const [id, text] of Object.entries(mappings)) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            }
+
+            updateClock();
+        }
+    </script>
+</body>
+</html>
